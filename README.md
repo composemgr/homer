@@ -47,8 +47,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/config/homer` - Data storage
-- `./rootfs/data/homer` - Data storage
+- `./volumes/config/homer` - Data storage
+- `./volumes/data/homer` - Data storage
 
 ## 🔍 Logging
 
