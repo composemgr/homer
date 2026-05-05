@@ -21,8 +21,8 @@ services:
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
     volumes:
-      - ./rootfs/config/homer:/config
-      - ./rootfs/data/homer:/data
+      - ./volumes/config/homer:/config
+      - ./volumes/data/homer:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8091"]
       interval: 30s
