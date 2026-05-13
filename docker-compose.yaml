@@ -16,12 +16,16 @@ services:
     logging: *default-logging
     networks:
       - homer
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:8091:8080"
     environment:
       TZ: ${TZ:-America/New_York}
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
+      CONTAINER_NAME: homer-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
     volumes:
       - ./volumes/config/homer:/www/assets
     healthcheck:
@@ -29,8 +33,28 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://homer-app:8080'
+      - 'cloudflare.hostname=homer.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.homer-app.entrypoints=http'
+      - 'traefik.http.routers.homer-app-secure.tls=true'
+      - 'traefik.http.routers.homer-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.homer-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.homer-app.middlewares=homer-app-https-redirect'
+      - 'traefik.http.routers.homer-app-secure.entrypoints=https'
+      - 'traefik.http.routers.homer-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.homer-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.homer-app-secure.service=homer-app'
+      - 'traefik.http.services.homer-app.loadbalancer.server.port=8080'
 
 networks:
   homer:
     name: homer
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
