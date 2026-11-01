@@ -1,0 +1,36 @@
+name: homer
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: b4bz/homer:latest
+    container_name: homer-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: homer-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    volumes:
+      - './volumes/config/homer:/www/assets:z'
+    labels:
+      - 'cloudflare.enable=true'
+      - 'cloudflare.service=http://homer-app:8080'
+      - 'cloudflare.hostname=${BASE_HOST_NAME:-$HOSTNAME}'
+    networks:
+      - homer
+      - cloudflare
+
+networks:
+  homer:
+    name: homer
+    external: false
+  cloudflare:
+    external: true

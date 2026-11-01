@@ -1,0 +1,44 @@
+name: homer
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: b4bz/homer:latest
+    container_name: homer-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: homer-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    volumes:
+      - './volumes/config/homer:/www/assets:z'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
+      - 'traefik.http.routers.homer-app.entrypoints=http'
+      - 'traefik.http.routers.homer-app.rule=Host(`${BASE_HOST_NAME:-$HOSTNAME}`)'
+      - 'traefik.http.middlewares.homer-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.homer-app.middlewares=homer-app-https-redirect'
+      - 'traefik.http.routers.homer-app-secure.entrypoints=https'
+      - 'traefik.http.routers.homer-app-secure.rule=Host(`${BASE_HOST_NAME:-$HOSTNAME}`)'
+      - 'traefik.http.routers.homer-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.homer-app-secure.service=homer-app'
+      - 'traefik.http.services.homer-app.loadbalancer.server.port=8080'
+    networks:
+      - homer
+      - traefik
+
+networks:
+  homer:
+    name: homer
+    external: false
+  traefik:
+    external: true

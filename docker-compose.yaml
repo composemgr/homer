@@ -1,58 +1,33 @@
-# nginx proxy address - http://172.17.0.1:8091
+# nginx proxy address - http://172.17.0.1:64202
 
 name: homer
 x-logging: &default-logging
-  driver: json-file
   options:
-    max-size: "5m"
-    max-file: "1"
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
 
 services:
   app:
     image: b4bz/homer:latest
-    pull_policy: always
     container_name: homer-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
+    pull_policy: always
     logging: *default-logging
-    networks:
-      - homer
-      - proxy
-      - cloudflare
-    ports:
-      - "172.17.0.1:8091:8080"
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: homer-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    ports:
+      - '172.17.0.1:64202:8080'
     volumes:
-      - ./volumes/config/homer:/www/assets
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://homer-app:8080'
-      - 'cloudflare.hostname=homer.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.homer-app.entrypoints=http'
-      - 'traefik.http.routers.homer-app-secure.tls=true'
-      - 'traefik.http.routers.homer-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.homer-app-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.homer-app.middlewares=homer-app-https-redirect'
-      - 'traefik.http.routers.homer-app-secure.entrypoints=https'
-      - 'traefik.http.routers.homer-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.homer-app-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.homer-app-secure.service=homer-app'
-      - 'traefik.http.services.homer-app.loadbalancer.server.port=8080'
+      - './volumes/config/homer:/www/assets:z'
+    networks:
+      - homer
 
 networks:
   homer:
     name: homer
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true
