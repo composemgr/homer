@@ -20,6 +20,12 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: homer-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --no-verbose -Y off --tries=1 --spider http://127.0.0.1:$${PORT}/ || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     ports:
       - '172.17.0.1:64202:8080'
     volumes:
